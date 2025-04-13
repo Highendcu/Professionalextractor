@@ -1,9 +1,10 @@
-import os
-import json
-from functools import wraps
-from flask import Blueprint, render_template, request, redirect, url_for, session, jsonify, send_file
+from flask import Blueprint, render_template, request, redirect, url_for, session
 from datetime import datetime, timedelta
-from app.routes.utils import generate_user_data
+from functools import wraps
+import json
+import os
+import random
+import string
 
 bp = Blueprint("admin", __name__, template_folder="../templates")
 
