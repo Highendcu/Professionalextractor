@@ -43,11 +43,16 @@ def start_extraction(urls, keywords, platforms, country, state):
     with DATA_LOCK:
         EXTRACTION_DATA.clear()
 
+    # Normalize inputs
+    if isinstance(urls, str):
+        urls = [u.strip() for u in urls.split(",") if u.strip()]
     if isinstance(keywords, str):
         keywords = [k.strip() for k in keywords.split(",") if k.strip()]
 
     def process():
+        global EXTRACTION_ACTIVE
         total_count = 0
+
         for platform in platforms:
             if not EXTRACTION_ACTIVE:
                 break
@@ -58,10 +63,14 @@ def start_extraction(urls, keywords, platforms, country, state):
                     with DATA_LOCK:
                         EXTRACTION_DATA.extend(results)
                         total_count += len(results)
-                        if socketio:
-                            socketio.emit("update", {"new_count": len(results), "total_count": total_count}, broadcast=True)
+                    if socketio:
+                        socketio.emit("update", {
+                            "new_count": len(results),
+                            "total_count": total_count
+                        }, broadcast=True)
                 except Exception as e:
                     print(f"[ERROR] Scraper failed for {platform}: {e}")
+
         EXTRACTION_ACTIVE = False
 
     thread = threading.Thread(target=process)
