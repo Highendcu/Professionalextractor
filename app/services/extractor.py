@@ -1,7 +1,7 @@
 import threading
-import time
 from datetime import datetime
 from flask_socketio import emit
+
 from app.services.scraper.yellowpages import scrape_yellowpages
 from app.services.scraper.whitepages import scrape_whitepages
 from app.services.scraper.manta import scrape_manta
@@ -30,11 +30,13 @@ SCRAPER_MAP = {
     "thumbtack": scrape_thumbtack
 }
 
-socketio = None  # Placeholder to store socketio instance
+socketio = None  # Placeholder for socketio instance
+
 
 def set_socketio(sio):
     global socketio
     socketio = sio
+
 
 def start_extraction(urls, keywords, platforms, country, state):
     global EXTRACTION_ACTIVE
@@ -50,9 +52,7 @@ def start_extraction(urls, keywords, platforms, country, state):
         keywords = [k.strip() for k in keywords.split(",") if k.strip()]
 
     def process():
-        global EXTRACTION_ACTIVE
         total_count = 0
-
         for platform in platforms:
             if not EXTRACTION_ACTIVE:
                 break
@@ -63,19 +63,34 @@ def start_extraction(urls, keywords, platforms, country, state):
                     with DATA_LOCK:
                         EXTRACTION_DATA.extend(results)
                         total_count += len(results)
+
                     if socketio:
-                        socketio.emit("update", {
-                            "new_count": len(results),
-                            "total_count": total_count
-                        }, broadcast=True)
+                        socketio.emit(
+                            "update",
+                            {
+                                "new_count": len(results),
+                                "total_count": total_count
+                            },
+                            broadcast=True
+                        )
+                    else:
+                        print("[WARN] SocketIO not initialized.")
                 except Exception as e:
                     print(f"[ERROR] Scraper failed for {platform}: {e}")
-
         EXTRACTION_ACTIVE = False
 
-    thread = threading.Thread(target=process)
-    thread.start()
+    # Start async task properly
+    if socketio:
+        socketio.start_background_task(target=process)
+    else:
+        print("[ERROR] Cannot start background task: socketio is not set.")
+
 
 def stop_extraction():
     global EXTRACTION_ACTIVE
     EXTRACTION_ACTIVE = False
+
+
+def get_extracted_data():
+    with DATA_LOCK:
+        return list(EXTRACTION_DATA)

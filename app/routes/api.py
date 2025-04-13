@@ -1,5 +1,6 @@
-from flask import Blueprint, request, jsonify, Response
+from flask import Blueprint, request, jsonify, Response, session
 from app.services.extractor import start_extraction, EXTRACTION_DATA, EXTRACTION_ACTIVE, DATA_LOCK, stop_extraction
+from datetime import datetime
 import threading
 
 bp = Blueprint('api', __name__)
@@ -23,9 +24,12 @@ def extract():
 @bp.route('/view-extraction')
 def view_extraction():
     with DATA_LOCK:
-        total = len(EXTRACTION_DATA)
-        data = EXTRACTION_DATA.copy()
-    return jsonify({"numbers": data, "total": total, "active": EXTRACTION_ACTIVE})
+        data = [{
+            "number": entry.get("number"),
+            "name": entry.get("name"),
+            "address": entry.get("address")
+        } for entry in EXTRACTION_DATA]
+    return jsonify({"numbers": data})
 
 @bp.route('/stop-extraction', methods=['POST'])
 def stop_extraction_route():
@@ -42,7 +46,7 @@ def export_data():
                 csv_data += f"{entry['number']},{entry['name']},{entry['address']}\n"
             return Response(csv_data, mimetype="text/csv", headers={"Content-disposition": "attachment; filename=extracted_data.csv"})
         return jsonify(EXTRACTION_DATA)
-		
+
 @bp.route('/verify-credentials', methods=['POST'])
 def verify_credentials():
     data = request.form or request.get_json()
@@ -61,7 +65,7 @@ def verify_credentials():
 @bp.route('/bulk-send', methods=['POST'])
 def bulk_send():
     message = request.form.get("message", "")
-    # TODO: Integrate with your SMS or WhatsApp bulk API
+    # TODO: Integrate with SMS or WhatsApp API
     print("Sending bulk message:", message[:60])
     return jsonify({"status": "sent"})
 
@@ -69,6 +73,6 @@ def bulk_send():
 def bulk_verify():
     raw = request.form.get("numbers", "")
     numbers = [n.strip() for n in raw.split(",") if n.strip()]
-    # TODO: Connect to verification API or phone lookup
+    # TODO: Integrate with verification API
     print("Verifying", len(numbers), "numbers...")
     return jsonify({"status": "verified", "count": len(numbers)})

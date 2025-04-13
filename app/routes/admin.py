@@ -1,16 +1,27 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, jsonify, abort, Response
-from datetime import datetime, timedelta
-from app.models.user import load_users, save_users
-from app.services.validator import validate_credentials
-from app import db
-import uuid
 import os
+import json
+from functools import wraps
+from flask import Blueprint, render_template, request, redirect, url_for, session, jsonify, send_file
+from datetime import datetime, timedelta
+from app.routes.utils import generate_user_data
 
-bp = Blueprint('admin', __name__)
+bp = Blueprint("admin", __name__, template_folder="../templates")
+
+USER_DB_PATH = os.path.join("app", "data", "users.json")
 
 # Default admin credentials (fallback)
 DEFAULT_ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
 DEFAULT_ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "12345")
+
+def load_users():
+    if not os.path.exists(USER_DB_PATH):
+        return []
+    with open(USER_DB_PATH, "r") as f:
+        return json.load(f)
+
+def save_users(users):
+    with open(USER_DB_PATH, "w") as f:
+        json.dump(users, f, indent=2)
 
 def login_required(f):
     from functools import wraps
@@ -34,6 +45,12 @@ def admin_login():
             return redirect(url_for("admin.admin_dashboard"))
         return render_template("login.html", error="Invalid credentials")
     return render_template("login.html")
+	
+@bp.route("/logout")
+@login_required
+def logout():
+    session.pop("admin_logged_in", None)
+    return redirect(url_for("main.index"))
 
 # === Admin Dashboard ===
 @bp.route("/admin-dashboard")
@@ -118,12 +135,16 @@ def export_csv():
     users = load_users()
     output = StringIO()
     writer = csv.writer(output)
-    writer.writerow(["Username", "Password", "Created", "Expiry"])
-    for u in users:
-        writer.writerow([u['username'], u['password'], u['created_at'], u['expiry']])
+    writer.writerow(["Username", "Password", "Expiry", "Revoked"])
+    for user in users:
+        writer.writerow([user["username"], user["password"], user["expiry"], user.get("revoked", False)])
     output.seek(0)
-    return Response(output.read(), mimetype="text/csv",
-                    headers={"Content-Disposition": "attachment; filename=users.csv"})
+    return send_file(
+        output,
+        mimetype="text/csv",
+        as_attachment=True,
+        download_name="users.csv"
+    )
 
 # === Frontend License Verification ===
 @bp.route('/verify-credentials', methods=['POST'])
