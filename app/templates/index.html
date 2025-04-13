@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Professional Data Extractor</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header class="main-header">
+      <h1>🔍 Professional Data Extractor</h1>
+      <div class="header-controls">
+        <div id="status-box" class="status-box" style="display:none;"></div>
+        <button class="btn primary-btn" onclick="openModal('sender-modal')">📤 Bulk Sender</button>
+        <button class="btn primary-btn" onclick="openModal('verifier-modal')">🔢 Bulk Verify</button>
+        <button class="btn success-btn" onclick="exportData()">💾 Save All</button>
+        <button class="btn danger-btn" id="stop-btn">⏹ Stop</button>
+        <a href="{{ url_for('admin.admin_login') }}" class="btn admin-btn" target="_blank">⚙️ Admin</a>
+        <button class="btn settings-btn" onclick="openModal('settings-modal')">⚙️ Settings</button>
+        <button class="btn" onclick="printExtractedData()">🖨 Print Extracted</button>
+        <button id="theme-toggle" class="btn">☀️ Light Mode</button>
+      </div>
+    </header>
+
+    <form method="POST" id="phone-extractor-form">
+      <div class="form-section">
+        <div class="input-group">
+          <label for="urls">Enter URLs:</label>
+          <textarea name="urls" id="urls" placeholder="Enter URLs separated by commas" required></textarea>
+        </div>
+        <div class="input-group">
+          <label for="keywords">Enter Keywords (Optional):</label>
+          <textarea name="keywords" id="keywords" placeholder="Enter Keywords separated by commas (Optional)"></textarea>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <label>Select Platforms:</label>
+        <div class="checkbox-grid">
+          <label><input type="checkbox" name="platforms[]" value="yellowpages"> Yellow Pages</label>
+          <label><input type="checkbox" name="platforms[]" value="manta"> Manta</label>
+          <label><input type="checkbox" name="platforms[]" value="whitepages"> WhitePages</label>
+          <label><input type="checkbox" name="platforms[]" value="yelp"> Yelp</label>
+          <label><input type="checkbox" name="platforms[]" value="bbb"> BBB</label>
+          <label><input type="checkbox" name="platforms[]" value="hotfrog"> HotFrog</label>
+          <label><input type="checkbox" name="platforms[]" value="cylex"> Cylex</label>
+          <label><input type="checkbox" name="platforms[]" value="angi"> Angi</label>
+          <label><input type="checkbox" name="platforms[]" value="houzz"> Houzz</label>
+          <label><input type="checkbox" name="platforms[]" value="thumbtack"> Thumbtack</label>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <label for="country">Select Country:</label>
+        <select id="country" name="country">
+          <option value="">-- Select Country --</option>
+          {% for country in countries %}
+            <option value="{{ country }}">{{ country }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-section">
+        <label for="state">Select State:</label>
+        <select id="state" name="state">
+          <option value="">-- Select State --</option>
+          {% for state in states %}
+            <option value="{{ state }}">{{ state }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </form>
+
+    <section class="results-section">
+      <h2>📋 Extracted Data</h2>
+      <p id="license-warning" class="warning-msg" style="display:none;">⚠️ Your license is expired or invalid!</p>
+      <div class="results-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Phone Number</th>
+              <th>Full Name</th>
+              <th>Address</th>
+            </tr>
+          </thead>
+          <tbody id="phone-preview">
+            <tr>
+              <td colspan="3" class="placeholder-msg">No data extracted yet. Start scanning to see results!</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="progress-stats">
+        <p>🔁 Latest batch: <span id="new-count">0</span></p>
+        <p>📊 Total records: <span id="total-count">0</span></p>
+      </div>
+    </section>
+
+    <div id="modal-overlay" class="modal-overlay"></div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal">
+      <div class="modal-content">
+        <h3>⚙️ Settings</h3>
+        <form id="settings-form">
+          <div class="input-group">
+            <label for="buy-time">Buy Time (in days):</label>
+            <input type="number" id="buy-time" required>
+          </div>
+          <div class="input-group">
+            <label for="email-us">Email Us:</label>
+            <textarea id="email-us" rows="4" placeholder="Write your message here..." required></textarea>
+          </div>
+          <div class="modal-actions">
+            <button type="submit" class="btn primary-btn">Save</button>
+            <button type="button" class="btn cancel-btn" onclick="closeModals()">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+	<!-- Bulk Sender Modal -->
+    <div id="sender-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-btn">&times;</span>
+        <h3>📤 Bulk Sender</h3>
+        <form id="bulk-send-form">
+            <label for="message-content">Message to Send:</label>
+            <textarea id="message-content" rows="6" placeholder="Write your bulk message here..." required></textarea>
+            <div class="modal-actions">
+                <button type="submit" class="btn primary-btn">Send to 50,000</button>
+                <button type="button" class="btn cancel-btn" onclick="closeModals()">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+     <!-- Bulk Verifier Modal -->
+        <div id="verifier-modal" class="modal">
+          <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h3>🔢 Bulk Verify</h3>
+            <form id="bulk-verify-form">
+              <label for="verify-numbers">Paste Numbers to Verify (up to 25,000):</label>
+              <textarea id="verify-numbers" rows="6" placeholder="Enter phone numbers separated by commas" required></textarea>
+              <div class="modal-actions">
+                <button type="submit" class="btn primary-btn">Verify</button>
+                <button type="button" class="btn cancel-btn" onclick="closeModals()">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+    <!-- Start Extraction Button -->
+        <div id="start-wrapper" style="display: flex; align-items: center; gap: 10px;">
+            <button id="start-btn" class="btn primary-btn">Start Extraction</button>
+            <div id="loading-indicator" style="display: none; align-items: center; gap: 5px;">
+                <div class="spinner"></div>
+                <span style="font-weight: bold;">Extracting...</span>
+              </div>
+            </div>
+        <span style="font-weight: bold;">Extracting...</span>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-btn">&times;</span>
+        <h2>Enter Username and Password</h2>
+        <form id="login-form">
+          <label for="username">Username</label>
+          <input type="text" id="username" required />
+          <label for="password">Password</label>
+          <input type="password" id="password" required />
+          <button type="submit" class="btn success-btn">Submit</button>
+        </form>
+        <p id="error-message" class="form-error" style="display: none;">Invalid username or password</p>
+      </div>
+    </div>
+  </div>
+
+<<script>
+  let extractionInterval;
+
+  function openModal(modalId) {
+    $('#' + modalId).addClass('active');
+    $('#modal-overlay').addClass('active');
+  }
+
+  function closeModals() {
+    $('.modal').removeClass('active');
+    $('#modal-overlay').removeClass('active');
+  }
+
+  function exportData() {
+    const entries = document.querySelectorAll('.data-entry td:first-child');
+    const numbers = Array.from(entries).map(e => e.textContent.trim());
+    if (numbers.length === 0) {
+      alert("No numbers to export!");
+      return;
+    }
+    const content = numbers.join('\n');
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'extracted_numbers.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+    showStatus("💾 Data exported!", "success");
+  }
+
+  function updateResults() {
+    $.get(`/view-extraction`, function(data) {
+      const container = $('#phone-preview');
+      container.empty();
+      data.numbers.forEach(entry => {
+        container.append(`
+          <tr class="data-entry">
+            <td> ${entry.number}</td>
+            <td> ${entry.name}</td>
+            <td> ${entry.address}</td>
+          </tr>
+        `);
+      });
+    });
+  }
+
+  const socket = io();
+  socket.on('update', function (data) {
+    $('#new-count').text(data.new_count);
+    $('#total-count').text(data.total_count);
+    updateResults();
+  });
+
+  $('#login-form').submit(function(e) {
+    e.preventDefault();
+    const username = $('#username').val();
+    const password = $('#password').val();
+    $.post('/verify-credentials', { username, password }, function(data) {
+      if (data.valid) {
+        $('#login-modal').removeClass('active');
+        $('#modal-overlay').removeClass('active');
+        showStatus("✅ Extraction started!", "success");
+
+        $.post('/extract', $('#phone-extractor-form').serialize(), function() {
+          extractionInterval = setInterval(updateResults, 5000);
+
+          $('#stop-btn').prop('disabled', false);
+          $('#export-btn').prop('disabled', false);
+          $('#platform-selector-btn').prop('disabled', false);
+        });
+      } else {
+        $('#license-warning').show();
+        $('#error-message').show();
+        showStatus("❌ License invalid or expired!", "error");
+      }
+    });
+  });
+
+  $('#start-btn').click(function() {
+    const urls = $('#urls').val().trim();
+    const platforms = $('input[name="platforms[]"]:checked');
+    if (!urls || platforms.length === 0) {
+      alert("Please enter URLs and select at least one platform.");
+      return;
+    }
+    $('#login-modal').addClass('active');
+    $('#modal-overlay').addClass('active');
+  });
+
+  $('#stop-btn').click(function () {
+    $.post('/stop-extraction', function () {
+      clearInterval(extractionInterval);
+      showStatus("🛑 Extraction stopped", "warning");
+    });
+  });
+
+  $('#platform-selector-btn').click(function () {
+    openModal('platform-modal');
+  });
+
+  $('#modal-overlay, .modal-close, .close-btn').click(closeModals);
+
+  function showStatus(message, type = "info") {
+    const box = document.getElementById("status-box");
+    if (!box) return;
+    box.innerText = message;
+    box.className = "status-box " + type;
+    box.style.display = "block";
+    setTimeout(() => { box.style.display = "none"; }, 4000);
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "light") {
+      document.body.classList.add("light-mode");
+      document.getElementById("theme-toggle").innerText = "🌙 Dark Mode";
+    }
+
+    const themeToggle = document.getElementById("theme-toggle");
+    if (themeToggle) {
+      themeToggle.addEventListener("click", () => {
+        document.body.classList.toggle("light-mode");
+        const isLight = document.body.classList.contains("light-mode");
+        localStorage.setItem("theme", isLight ? "light" : "dark");
+        themeToggle.innerText = isLight ? "🌙 Dark Mode" : "☀️ Light Mode";
+      });
+    }
+  });
+  
+document.getElementById("bulk-send-form").addEventListener("submit", function (e) {
+  e.preventDefault();
+  const msg = document.getElementById("message-content").value;
+  if (!msg.trim()) return alert("Please enter a message.");
+  showStatus("🚀 Sending bulk messages...", "info");
+  $.post("/bulk-send", { message: msg }, function (res) {
+    showStatus("✅ Bulk message sent!", "success");
+    closeModals();
+  });
+});
+
+document.getElementById("bulk-verify-form").addEventListener("submit", function (e) {
+  e.preventDefault();
+  const numbers = document.getElementById("verify-numbers").value;
+  if (!numbers.trim()) return alert("Please enter numbers.");
+  showStatus("🔍 Verifying numbers...", "info");
+  $.post("/bulk-verify", { numbers: numbers }, function (res) {
+    showStatus("✅ Verification complete!", "success");
+    closeModals();
+  });
+});
+</script>
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

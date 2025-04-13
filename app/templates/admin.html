@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <div class="container">
+    <header class="main-header">
+      <h1>⚙️ Admin Dashboard</h1>
+      <div class="header-controls">
+	  <div id="status-box" class="status-box" style="display:none;"></div>
+        <a href="{{ url_for('main.index') }}" class="btn danger-btn">⏏️ Logout</a>
+      </div>
+    </header>
+
+    <section class="user-section">
+      <h2 class="section-header">🔐 License Users</h2>
+      <form method="POST" action="{{ url_for('admin.generate_user') }}">
+        <button type="submit" class="btn primary-btn">🆕 Generate New User</button>
+		<button type="submit" class="btn success-btn">📤 Export CSV</button>
+		<button id="theme-toggle" class="btn">☀️ Light Mode</button>
+		<button class="btn" onclick="printExtractedData()">🖨 Print Extracted</button>
+      </form>
+      </form>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>🧑 Username</th>
+            <th>🔑 Password</th>
+            <th>📅 Created</th>
+            <th>⏳ Expiry</th>
+            <th>⚙️ Actions</th>
+          </tr>
+		 <div class="pagination">
+         {% if page > 1 %}
+         <a class="pagination-btn" href="{{ url_for('admin.admin_dashboard', page=page-1) }}">← Prev</a>
+        {% endif %}
+         <span id="page-indicator">Page {{ page }} of {{ total_pages }}</span>
+        {% if page < total_pages %}
+        <a class="pagination-btn" href="{{ url_for('admin.admin_dashboard', page=page+1) }}">Next →</a>
+        {% endif %}
+        </div>
+
+        </thead>
+        <tbody>
+          {% for user in users %}
+          <tr>
+            <td>{{ user.username }}</td>
+            <td>{{ user.password }}</td>
+            <td>{{ user.created_at }}</td>
+            <td>
+              {% if user.expiry %}
+                {{ user.expiry_dt.strftime('%Y-%m-%d %H:%M') if user.expiry_dt else '∞' }}
+                {% if user.expiry_dt and user.expiry_dt < now %}
+                   <span class="form-error">(Expired)</span>
+                {% endif %}
+              {% else %}
+                ∞
+              {% endif %}
+            </td>
+            <td>
+              <form method="POST" action="{{ url_for('admin.revoke_user', username=user.username) }}" style="display:inline-block;">
+                <button class="btn danger-btn" onclick="return confirm('Are you sure to revoke this user?')">🛑 Revoke</button>
+              </form>
+              <form method="GET" action="{{ url_for('admin.edit_user_form', username=user.username) }}" style="display:inline-block;">
+                <button class="btn edit-btn">✏️ Edit</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+  </div>
+</body>
+</html>
