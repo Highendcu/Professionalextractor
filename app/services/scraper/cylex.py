@@ -12,8 +12,16 @@ def scrape_cylex(keywords, location=""):
 
     if isinstance(keywords, str):
         keywords = [k.strip() for k in keywords.split(",") if k.strip()]
-    if isinstance(location, list):
-        location = " ".join(location)
+
+    if isinstance(urls, str):
+        urls = [u.strip() for u in urls.split(",") if u.strip()]
+
+    # Ensure return format is like:
+    return [{
+       "number": phone,
+        "name": name,
+        "address": address
+    } for ...]
 
     headers = {"User-Agent": "Mozilla/5.0"}
 

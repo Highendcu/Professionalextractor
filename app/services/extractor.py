@@ -1,3 +1,4 @@
+socketio = None
 import threading
 from datetime import datetime
 from flask_socketio import emit
@@ -33,9 +34,9 @@ SCRAPER_MAP = {
 socketio = None  # Placeholder for socketio instance
 
 
-def set_socketio(sio):
+def set_socketio(io):
     global socketio
-    socketio = sio
+    socketio = io
 
 
 def start_extraction(urls, keywords, platforms, country, state):
@@ -63,16 +64,15 @@ def start_extraction(urls, keywords, platforms, country, state):
                     with DATA_LOCK:
                         EXTRACTION_DATA.extend(results)
                         total_count += len(results)
+                        for item in batch:
+                            EXTRACTION_DATA.append(item)
+                            if socketio:
+                                socketio.emit("update", {
+                                    "new_count": 1,
+                                    "total_count": len(EXTRACTION_DATA)
+                                })
 
-                    if socketio:
-                        socketio.emit(
-                            "update",
-                            {
-                                "new_count": len(results),
-                                "total_count": total_count
-                            },
-                            broadcast=True
-                        )
+                        time.sleep(0.5) 
                     else:
                         print("[WARN] SocketIO not initialized.")
                 except Exception as e:

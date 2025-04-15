@@ -10,13 +10,18 @@ requests_cache.install_cache("scraper_cache", expire_after=7200)
 def scrape_whitepages(keywords, location=""):
     results = []
 
-    # Normalize input
     if isinstance(keywords, str):
         keywords = [k.strip() for k in keywords.split(",") if k.strip()]
-    if isinstance(location, list):
-        location = " ".join(location)
-    elif not location:
-        location = "united-states"
+
+    if isinstance(urls, str):
+        urls = [u.strip() for u in urls.split(",") if u.strip()]
+
+    # Ensure return format is like:
+    return [{
+       "number": phone,
+        "name": name,
+        "address": address
+    } for ...]
 
     headers = {"User-Agent": "Mozilla/5.0"}
 

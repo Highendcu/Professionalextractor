@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify, Response, session
 from app.services.extractor import start_extraction, EXTRACTION_DATA, EXTRACTION_ACTIVE, DATA_LOCK, stop_extraction
 from datetime import datetime
 import threading
+from app.services.validator import validate_credentials
 
 bp = Blueprint('api', __name__)
 
@@ -62,17 +63,14 @@ def verify_credentials():
                 return jsonify({"valid": True})
     return jsonify({"valid": False})
 
-@bp.route('/bulk-send', methods=['POST'])
+@app.route('/bulk-send', methods=['POST'])
 def bulk_send():
     message = request.form.get("message", "")
-    # TODO: Integrate with SMS or WhatsApp API
-    print("Sending bulk message:", message[:60])
+    print(f"[BULK SEND]: {message[:100]}")
     return jsonify({"status": "sent"})
 
-@bp.route('/bulk-verify', methods=['POST'])
+@app.route('/bulk-verify', methods=['POST'])
 def bulk_verify():
-    raw = request.form.get("numbers", "")
-    numbers = [n.strip() for n in raw.split(",") if n.strip()]
-    # TODO: Integrate with verification API
-    print("Verifying", len(numbers), "numbers...")
-    return jsonify({"status": "verified", "count": len(numbers)})
+    numbers = request.form.get("numbers", "")
+    print(f"[VERIFY]: {numbers[:100]}")
+    return jsonify({"status": "verified"})
