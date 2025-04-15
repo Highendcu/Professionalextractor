@@ -3,6 +3,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_session import Session
 from flask_socketio import SocketIO
 import os
+from app.services.extractor import set_socketio
+set_socketio(socketio)
 
 # Initialize extensions
 db = SQLAlchemy()
