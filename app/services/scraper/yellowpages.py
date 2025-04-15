@@ -10,15 +10,12 @@ requests_cache.install_cache("scraper_cache", expire_after=7200)
 def scrape_yellowpages(urls, keywords, country="us", state=""):
     results = []
 
-    # Normalize inputs
-    if isinstance(urls, str):
-        urls = [u.strip() for u in urls.split(",") if u.strip()]
     if isinstance(keywords, str):
         keywords = [k.strip() for k in keywords.split(",") if k.strip()]
-    if isinstance(country, list):
-        country = " ".join(country)
-    if isinstance(state, list):
-        state = " ".join(state)
+    if isinstance(location, list):
+        location = " ".join(location)
+    if not location:
+        location = "usa"
 
     headers = {"User-Agent": "Mozilla/5.0"}
 
