@@ -1,8 +1,9 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session
+from flask import Blueprint, render_template, request, redirect, url_for, session, jsonify, send_file
 from datetime import datetime, timedelta
 from functools import wraps
 import json
 import os
+import uuid
 import random
 import string
 from app.services.validator import validate_credentials
@@ -10,8 +11,6 @@ from app.services.validator import validate_credentials
 bp = Blueprint("admin", __name__, template_folder="../templates")
 
 USER_DB_PATH = os.path.join("app", "data", "users.json")
-
-# Default admin credentials (fallback)
 DEFAULT_ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
 DEFAULT_ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "12345")
 
@@ -26,7 +25,6 @@ def save_users(users):
         json.dump(users, f, indent=2)
 
 def login_required(f):
-    from functools import wraps
     @wraps(f)
     def decorated(*args, **kwargs):
         if "admin_logged_in" not in session:
@@ -47,14 +45,13 @@ def admin_login():
             return redirect(url_for("admin.admin_dashboard"))
         return render_template("login.html", error="Invalid credentials")
     return render_template("login.html")
-	
+
 @bp.route("/logout")
 @login_required
 def logout():
     session.pop("admin_logged_in", None)
     return redirect(url_for("main.index"))
 
-# === Admin Dashboard ===
 @bp.route("/admin-dashboard")
 @login_required
 def admin_dashboard():
@@ -77,7 +74,6 @@ def admin_dashboard():
                            total_pages=total_pages,
                            now=datetime.utcnow())
 
-# === Generate License User ===
 @bp.route("/generate-user", methods=["POST"])
 @login_required
 def generate_user():
@@ -95,7 +91,6 @@ def generate_user():
     save_users(users)
     return jsonify({"username": username, "password": password, "expiry": expiry})
 
-# === Revoke License ===
 @bp.route("/revoke-user/<username>", methods=["POST"])
 @login_required
 def revoke_user(username):
@@ -106,7 +101,6 @@ def revoke_user(username):
     save_users(users)
     return redirect(url_for("admin.admin_dashboard"))
 
-# === Edit User (Form) ===
 @bp.route("/edit-user/<username>")
 @login_required
 def edit_user_form(username):
@@ -116,7 +110,6 @@ def edit_user_form(username):
             return render_template("edit_user.html", user=user)
     return redirect(url_for("admin.admin_dashboard"))
 
-# === Edit User (Save) ===
 @bp.route("/edit-user/<username>", methods=["POST"])
 @login_required
 def update_user(username):
@@ -128,7 +121,6 @@ def update_user(username):
     save_users(users)
     return redirect(url_for("admin.admin_dashboard"))
 
-# === Export CSV ===
 @bp.route("/export-csv")
 @login_required
 def export_csv():
@@ -148,7 +140,6 @@ def export_csv():
         download_name="users.csv"
     )
 
-# === Frontend License Verification ===
 @bp.route('/verify-credentials', methods=['POST'])
 def verify_credentials():
     data = request.form or request.get_json()

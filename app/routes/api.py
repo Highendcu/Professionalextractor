@@ -74,3 +74,20 @@ def bulk_verify():
     numbers = request.form.get("numbers", "")
     print(f"[VERIFY]: {numbers[:100]}")
     return jsonify({"status": "verified"})
+
+@bp.route("/generate-license", methods=["POST"])
+def generate_license():
+    user_id = request.form.get("user_id")
+    if not user_id:
+        return jsonify({"error": "User ID required"}), 400
+
+    license_key = str(uuid.uuid4())
+    users = load_users()
+    for user in users:
+        if user["id"] == user_id:
+            user["license_key"] = license_key
+            break
+    save_users(users)
+
+    return jsonify({"license_key": license_key}), 200
+

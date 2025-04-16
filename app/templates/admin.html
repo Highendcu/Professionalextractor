@@ -18,7 +18,7 @@
     <section class="user-section">
       <h2 class="section-header">🔐 License Users</h2>
       <form method="POST" action="{{ url_for('admin.generate_user') }}">
-        <button type="submit" class="btn primary-btn">🆕 Generate New User</button>
+        <button onclick="generateLicense('USER_ID')">Generate License</button>
 		<button type="submit" class="btn success-btn">📤 Export CSV</button>
 		<button id="theme-toggle" class="btn">☀️ Light Mode</button>
 		<button class="btn" onclick="printExtractedData()">🖨 Print Extracted</button>

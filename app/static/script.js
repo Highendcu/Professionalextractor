@@ -56,6 +56,23 @@ function closeModals() {
   document.getElementById("modal-overlay").classList.remove("active");
 }
 
+function generateLicense(userId) {
+  fetch("/generate-license", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ user_id: userId }),
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.license_key) {
+      alert("License Key: " + data.license_key);
+    } else {
+      alert("Error generating license.");
+    }
+  });
+}
+
+
 document.querySelectorAll(".close-btn, #modal-overlay").forEach(el => {
   el.addEventListener("click", closeModals);
 });
