@@ -9,11 +9,9 @@ requests_cache.install_cache("scraper_cache", expire_after=7200)
 def scrape_yellowpages(urls, keywords, country="us", state=""):
     results = []
 
-    # ✅ Use default keywords if none provided
     if not keywords:
         keywords = ["plumber", "electrician", "restaurant"]
 
-    # ✅ Normalize keywords
     if isinstance(keywords, str):
         keywords = [k.strip() for k in keywords.split(",") if k.strip()]
 
@@ -27,10 +25,12 @@ def scrape_yellowpages(urls, keywords, country="us", state=""):
         try:
             response = requests.get(search_url, headers=headers, timeout=10)
             soup = BeautifulSoup(response.text, "html.parser")
-            listings = soup.select(".result")
+            listings = soup.select("div.info")
+
+            print(f"[YELLOWPAGES] Found {len(listings)} listings")
 
             for listing in listings:
-                name = listing.select_one(".business-name span")
+                name = listing.select_one("a.business-name span")
                 phone = listing.select_one(".phones")
                 address = listing.select_one(".street-address")
 
@@ -40,8 +40,7 @@ def scrape_yellowpages(urls, keywords, country="us", state=""):
                     "address": address.text.strip() if address else "N/A"
                 })
 
-                # Delay to mimic human-like browsing
-                time.sleep(random.uniform(1.5, 2.5))
+                time.sleep(random.uniform(1.2, 1.8))
 
         except Exception as e:
             print("[YELLOWPAGES ERROR]", e)

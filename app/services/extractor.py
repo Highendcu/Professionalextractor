@@ -82,11 +82,11 @@ def start_extraction(urls, keywords, platforms, country, state):
                         socketio.emit("update", {
                             "new_count": len(results),
                             "total_count": total_count
-                        }, broadcast=True)
+                        })
 
                         socketio.emit("extraction_update", {
                             "data": results
-                        }, broadcast=True)
+                        })
                         print("[DEBUG] Emitted data to client")
                     else:
                         print("[WARN] socketio not initialized")
