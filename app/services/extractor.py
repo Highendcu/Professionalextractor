@@ -70,7 +70,7 @@ def start_extraction(urls, keywords, platforms, country, state):
                 try:
                     print(f"[DEBUG] Scraping platform: {platform}...")
                     results = scraper(urls, keywords, country, state)
-					print(f"[DEBUG] results = scraper(keywords, '{country} {state}')")
+                    print(f"[DEBUG] results = scraper(keywords, '{country} {state}')")
                     with DATA_LOCK:
                         EXTRACTION_DATA.extend(results)
                         total_count += len(results)
@@ -92,15 +92,15 @@ def start_extraction(urls, keywords, platforms, country, state):
 
                 except Exception as e:
                     print(f"[ERROR] Scraper failed for {platform}: {e}")
-					
-			    try:
+                    
+                try:
                     results = scraper(urls, keywords, country, state)
                      print(f"[DEBUG] {platform} returned {len(results)} items")  # Add this
                 except Exception as e:
                     print(f"[CRITICAL] {platform} failed: {str(e)}")  # Add detailed logging
                     if socketio:
                         socketio.emit("error", {"platform": platform, "error": str(e)})
-					continue  # Add this to proceed to next platform
+                    continue  # Add this to proceed to next platform
 
         EXTRACTION_ACTIVE = False
         print("[DEBUG] Extraction process completed.")
