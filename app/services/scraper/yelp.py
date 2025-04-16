@@ -28,10 +28,10 @@ def scrape_yelp(keywords, location=""):
             response = requests.get(url, headers=headers, timeout=10)
             soup = BeautifulSoup(response.text, "html.parser")
 
-            listings = soup.select(".container__09f24__21w3G")
+            listings = soup.select("[data-testid='serp-ia-card']")
 
             for listing in listings:
-                name = listing.select_one("a.css-19v1rkv")
+                name = listing.select_one("[data-testid='serp-ia-card-header']")
                 phone = listing.select_one("p.css-1p9ibgf")
                 address = listing.select_one("address")
 

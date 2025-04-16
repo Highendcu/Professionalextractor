@@ -7,6 +7,15 @@ import requests_cache
 
 requests_cache.install_cache("scraper_cache", expire_after=7200)
 
+from selenium import webdriver
+options = webdriver.ChromeOptions()
+options.add_argument("--headless")
+driver = webdriver.Chrome(options=options)
+
+def scrape_thumbtack(...):
+    driver.get(url)
+    soup = BeautifulSoup(driver.page_source, "html.parser")
+
 def scrape_thumbtack(keywords, location=""):
     results = []
 

@@ -10,7 +10,6 @@ def create_app():
     app.config['SECRET_KEY'] = 'your-secret-key'
     CORS(app)
 
-    socketio.init_app(app)
 
     from app.routes.admin import admin as admin_blueprint
     from app.routes.api import api as api_blueprint
@@ -20,5 +19,6 @@ def create_app():
     app.register_blueprint(api_blueprint)
     app.register_blueprint(main_blueprint)
 
-    set_socketio(socketio)  # Properly indented
+    socketio.init_app(app)
+    set_socketio(socketio)	# Properly indented
     return app, socketio

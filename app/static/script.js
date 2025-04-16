@@ -164,6 +164,10 @@ socket.on("update", data => {
 });
 
 socket.on("extraction_update", data => {
+    if (!data.data || data.data.length === 0) {
+        showStatus("⚠️ No results from this platform", "warning");
+        return;
+    }
   const container = document.getElementById("phone-preview");
   if (!container || !data.data) return;
 
@@ -181,6 +185,16 @@ socket.on("extraction_update", data => {
     `;
     container.appendChild(row);
   });
+});
+
+socket.on("error", (data) => {
+    showStatus(`❌ ${data.platform} failed: ${data.error}`, "error");
+    $('#loading-indicator').hide();
+});
+
+socket.on("connect_error", (err) => {
+    console.log("Socket connection error:", err);
+    showStatus("🔌 Connection lost - Trying to reconnect...", "warning");
 });
 
 // === Polling Fallback (optional) ===

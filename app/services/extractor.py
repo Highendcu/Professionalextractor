@@ -17,20 +17,12 @@ from app.services.scraper.thumbtack import scrape_thumbtack
 EXTRACTION_DATA = []
 EXTRACTION_ACTIVE = False
 DATA_LOCK = threading.Lock()
+ACTIVITY_LOCK = threading.Lock()
 
+def test_scraper(urls, keywords, country, state):
+    return [{"number": "555-1234", "name": "Test", "address": "Test Address"}]
 # Map of platform to scraper function
-SCRAPER_MAP = {
-    "yellowpages": scrape_yellowpages,
-    "whitepages": scrape_whitepages,
-    "manta": scrape_manta,
-    "yelp": scrape_yelp,
-    "bbb": scrape_bbb,
-    "hotfrog": scrape_hotfrog,
-    "cylex": scrape_cylex,
-    "angi": scrape_angi,
-    "houzz": scrape_houzz,
-    "thumbtack": scrape_thumbtack
-}
+SCRAPER_MAP = {"yellowpages": scrape_yellowpages}
 
 socketio = None  # Placeholder
 
@@ -41,13 +33,13 @@ def set_socketio(sio):
 
 def start_extraction(urls, keywords, platforms, country, state):
     global EXTRACTION_ACTIVE
-    EXTRACTION_ACTIVE = True
+    with ACTIVITY_LOCK:  # Properly indent under "with"
+        EXTRACTION_ACTIVE = True
     print("[DEBUG] Starting extraction thread...")
 
     with DATA_LOCK:
         EXTRACTION_DATA.clear()
 
-    # Normalize input
     if isinstance(urls, str):
         urls = [u.strip() for u in urls.split(",") if u.strip()]
     if isinstance(keywords, str):
@@ -67,7 +59,7 @@ def start_extraction(urls, keywords, platforms, country, state):
                 try:
                     print(f"[DEBUG] Scraping platform: {platform}...")
                     results = scraper(urls, keywords, country, state)
-                    print(f"[DEBUG] Results from {platform}: {len(results)}")
+                    print(f"[DEBUG] results = scraper(keywords, f"{country} {state}")  # Pass keywords + location
 
                     with DATA_LOCK:
                         EXTRACTION_DATA.extend(results)
@@ -90,6 +82,15 @@ def start_extraction(urls, keywords, platforms, country, state):
 
                 except Exception as e:
                     print(f"[ERROR] Scraper failed for {platform}: {e}")
+					
+			    try:
+                    results = scraper(urls, keywords, country, state)
+                     print(f"[DEBUG] {platform} returned {len(results)} items")  # Add this
+                except Exception as e:
+                    print(f"[CRITICAL] {platform} failed: {str(e)}")  # Add detailed logging
+                    if socketio:
+                        socketio.emit("error", {"platform": platform, "error": str(e)})
+					continue  # Add this to proceed to next platform
 
         EXTRACTION_ACTIVE = False
         print("[DEBUG] Extraction process completed.")
