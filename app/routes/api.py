@@ -21,7 +21,6 @@ def extract():
     thread = threading.Thread(target=start_extraction, kwargs=form_data)
     thread.daemon = True
     thread.start()
-	print("✅ Extraction thread started")
 
     return jsonify({"status": "extraction_started"})
 
