@@ -178,7 +178,7 @@
     </div>
   </div>
 
-<<script>
+<script> 
   let extractionInterval;
 
   function openModal(modalId) {
@@ -186,10 +186,6 @@
     $('#modal-overlay').addClass('active');
   }
 
-  function closeModals() {
-    $('.modal').removeClass('active');
-    $('#modal-overlay').removeClass('active');
-  }
 
   function exportData() {
     const entries = document.querySelectorAll('.data-entry td:first-child');
@@ -209,27 +205,27 @@
     showStatus("💾 Data exported!", "success");
   }
 
-  function updateResults() {
-    $.get(`/view-extraction`, function(data) {
-      const container = $('#phone-preview');
-      container.empty();
-      data.numbers.forEach(entry => {
-        container.append(`
-          <tr class="data-entry">
-            <td> ${entry.number}</td>
-            <td> ${entry.name}</td>
-            <td> ${entry.address}</td>
-          </tr>
-        `);
-      });
-    });
-  }
-
-  const socket = io();
   socket.on('update', function (data) {
-    $('#new-count').text(data.new_count);
-    $('#total-count').text(data.total_count);
-    updateResults();
+      $('#new-count').text(data.new_count);
+      $('#total-count').text(data.total_count);
+  });
+
+  socket.on('extraction_update', function (data) {
+      const container = $('#phone-preview');
+      // Clear placeholder on first data
+      if ($('#phone-preview .placeholder-msg').length) {
+          $('#phone-preview').empty();
+      }
+      // Append new entries
+      data.data.forEach(entry => {
+          container.append(`
+              <tr class="data-entry">
+                  <td>${entry.number}</td>
+                  <td>${entry.name}</td>
+                  <td>${entry.address}</td>
+              </tr>
+          `);
+      });
   });
 
   $('#login-form').submit(function(e) {
@@ -243,7 +239,6 @@
         showStatus("✅ Extraction started!", "success");
 
         $.post('/extract', $('#phone-extractor-form').serialize(), function() {
-          extractionInterval = setInterval(updateResults, 5000);
 
           $('#stop-btn').prop('disabled', false);
           $('#export-btn').prop('disabled', false);

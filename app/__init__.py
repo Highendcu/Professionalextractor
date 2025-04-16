@@ -1,6 +1,7 @@
 from flask import Flask
 from flask_cors import CORS
 from flask_socketio import SocketIO
+from app.services.extractor import set_socketio
 
 socketio = SocketIO(cors_allowed_origins="*")
 
@@ -19,4 +20,5 @@ def create_app():
     app.register_blueprint(api_blueprint)
     app.register_blueprint(main_blueprint)
 
+    set_socketio(socketio)  # Properly indented
     return app, socketio
