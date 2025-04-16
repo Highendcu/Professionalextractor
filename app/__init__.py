@@ -1,36 +1,26 @@
 from flask import Flask
-from flask_session import Session
+from flask_cors import CORS
 from flask_socketio import SocketIO
-from app.extensions import db
-from .routes.api import api
-app.register_blueprint(api)
+from flask_sqlalchemy import SQLAlchemy
 
-socketio = SocketIO(cors_allowed_origins="*")
+socketio = SocketIO()
+db = SQLAlchemy()
 
 def create_app():
     app = Flask(__name__)
-    app.secret_key = 'your-secret-key-here'
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data.db'
-    app.config['SESSION_TYPE'] = 'filesystem'
-
-    # Initialize extensions
+    CORS(app)
+    app.config.from_object('config.Config')
     db.init_app(app)
-    Session(app)
     socketio.init_app(app)
 
-    # Register blueprints
-    from .routes import main, admin, api
-    app.register_blueprint(main.bp)
-    app.register_blueprint(admin.bp)
-    app.register_blueprint(api.bp)
+    # ⬇️ Move imports AFTER app is created
+    from .routes.main import main
+    from .routes.admin import admin
+    from .routes.api import api
 
-    # Pass socketio to extractor
-    from app.services.extractor import set_socketio
-    set_socketio(socketio)
-
-    # Create database tables
-    with app.app_context():
-        from app.models import user
-        db.create_all()
+    # ⬇️ Register blueprints with app
+    app.register_blueprint(main)
+    app.register_blueprint(admin)
+    app.register_blueprint(api)
 
     return app
