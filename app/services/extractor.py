@@ -47,18 +47,21 @@ def start_extraction(urls, keywords, platforms, country, state):
     with DATA_LOCK:
         EXTRACTION_DATA.clear()
 
-    # Normalize input
     if isinstance(urls, str):
         urls = [u.strip() for u in urls.split(",") if u.strip()]
     if isinstance(keywords, str):
         keywords = [k.strip() for k in keywords.split(",") if k.strip()]
     if not keywords:
-        keywords = ["plumber", "electrician", "restaurant"]
+        keywords = ["plumber"]
+
+    print(f"[DEBUG] Platforms: {platforms}")
+    print(f"[DEBUG] URLs: {urls}")
+    print(f"[DEBUG] Keywords: {keywords}")
+    print(f"[DEBUG] Country: {country}, State: {state}")
 
     def process():
         global EXTRACTION_ACTIVE
         total_count = 0
-        print("[DEBUG] Extracting for platforms:", platforms)
 
         for platform in platforms:
             if not EXTRACTION_ACTIVE:
@@ -67,15 +70,14 @@ def start_extraction(urls, keywords, platforms, country, state):
             scraper = SCRAPER_MAP.get(platform)
             if scraper:
                 try:
-                    print(f"[DEBUG] Scraping platform: {platform}...")
+                    print(f"[DEBUG] Running scraper for platform: {platform}")
                     results = scraper(urls, keywords, country, state)
-                    print(f"[DEBUG] {platform} returned {len(results)} items")  # ✅ This line fixed
+                    print(f"[DEBUG] Scraper returned {len(results)} results")
 
                     with DATA_LOCK:
                         EXTRACTION_DATA.extend(results)
                         total_count += len(results)
 
-                    # Emit via socket
                     if socketio:
                         socketio.emit("update", {
                             "new_count": len(results),
@@ -85,16 +87,15 @@ def start_extraction(urls, keywords, platforms, country, state):
                         socketio.emit("extraction_update", {
                             "data": results
                         }, broadcast=True)
-
-                        print("[DEBUG] Emitted update to client via SocketIO.")
+                        print("[DEBUG] Emitted data to client")
                     else:
-                        print("[WARN] SocketIO is not initialized.")
+                        print("[WARN] socketio not initialized")
 
                 except Exception as e:
-                    print(f"[ERROR] Scraper failed for {platform}: {e}")
+                    print(f"[ERROR] {platform} failed: {e}")
 
         EXTRACTION_ACTIVE = False
-        print("[DEBUG] Extraction process completed.")
+        print("[DEBUG] Extraction completed.")
 
     thread = threading.Thread(target=process)
     thread.start()
