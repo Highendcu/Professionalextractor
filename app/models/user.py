@@ -2,12 +2,12 @@ from app.extensions import db
 import json
 import os
 
-class UserData(db.Model):
+class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(100))
-    password = db.Column(db.String(100))
-    created_at = db.Column(db.String(100))
-    expiry = db.Column(db.String(100))
+    name = db.Column(db.String(150))
+    email = db.Column(db.String(150), unique=True)
+    license_key = db.Column(db.String(200))
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
 
 USERS_FILE = "users.json"
 
