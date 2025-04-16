@@ -7,25 +7,15 @@ import requests_cache
 
 requests_cache.install_cache("scraper_cache", expire_after=7200)
 
-from selenium import webdriver
-options = webdriver.ChromeOptions()
-options.add_argument("--headless")
-driver = webdriver.Chrome(options=options)
-
-def scrape_thumbtack(...):
-    driver.get(url)
-    soup = BeautifulSoup(driver.page_source, "html.parser")
-
-def scrape_thumbtack(keywords, location=""):
+def scrape_thumbtack(urls, keywords, country="us", state=""):
     results = []
 
     if isinstance(keywords, str):
         keywords = [k.strip() for k in keywords.split(",") if k.strip()]
-    if isinstance(location, list):
-        location = " ".join(location)
-    if not location:
-        location = "usa"
+    if not keywords:
+        keywords = ["cleaning", "moving", "plumber"]
 
+    location = state or country
     headers = {"User-Agent": "Mozilla/5.0"}
 
     for keyword in keywords:
@@ -40,7 +30,7 @@ def scrape_thumbtack(keywords, location=""):
 
             for listing in listings:
                 name = listing.select_one("a[data-testid='pro-title']")
-                phone = "N/A"  # Phone is usually hidden or JS-rendered
+                phone = "N/A"  # Usually hidden or JS-rendered
                 address = listing.select_one("p[data-testid='location-info']")
 
                 results.append({
