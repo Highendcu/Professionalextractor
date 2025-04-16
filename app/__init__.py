@@ -14,7 +14,7 @@ def create_app():
     socketio.init_app(app)
 
     # ⬇️ Move imports AFTER app is created
-    from .routes.main import main
+    from .routes.main import bp as main
     from .routes.admin import admin
     from .routes.api import api
 
