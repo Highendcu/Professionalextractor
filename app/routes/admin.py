@@ -1,4 +1,5 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, jsonify, send_file
+from flask import Blueprint, request, jsonify, render_template, redirect, url_for, session
+from app.models.user import load_users, save_users
 from datetime import datetime, timedelta
 from functools import wraps
 import json
@@ -152,4 +153,5 @@ def verify_credentials():
         return jsonify({"valid": True})
     return jsonify({"valid": False, "message": message})
 
+admin = bp
 __all__ = ["admin"]
