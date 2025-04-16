@@ -4,9 +4,9 @@ from datetime import datetime
 import threading
 from app.services.validator import validate_credentials
 
-bp = Blueprint('api', __name__)
+api = Blueprint('api', __name__)
 
-@bp.route('/extract', methods=['POST'])
+@api.route('/extract', methods=['POST'])
 def extract():
     form_data = {
         'urls': [url.strip() for url in request.form.get('urls', '').split(',') if url.strip()],
@@ -22,7 +22,7 @@ def extract():
 
     return jsonify({"status": "extraction_started"})
 
-@bp.route('/view-extraction')
+@api.route('/view-extraction')
 def view_extraction():
     with DATA_LOCK:
         data = [{
@@ -32,12 +32,12 @@ def view_extraction():
         } for entry in EXTRACTION_DATA]
     return jsonify({"numbers": data})
 
-@bp.route('/stop-extraction', methods=['POST'])
+@api.route('/stop-extraction', methods=['POST'])
 def stop_extraction_route():
     stop_extraction()
     return jsonify({"status": "Extraction stopped"})
 
-@bp.route('/export-data')
+@api.route('/export-data')
 def export_data():
     format = request.args.get('format', 'csv')
     with DATA_LOCK:
@@ -48,7 +48,7 @@ def export_data():
             return Response(csv_data, mimetype="text/csv", headers={"Content-disposition": "attachment; filename=extracted_data.csv"})
         return jsonify(EXTRACTION_DATA)
 
-@bp.route('/verify-credentials', methods=['POST'])
+@api.route('/verify-credentials', methods=['POST'])
 def verify_credentials():
     data = request.form or request.get_json()
     username = data.get('username', '').strip()
@@ -63,13 +63,13 @@ def verify_credentials():
                 return jsonify({"valid": True})
     return jsonify({"valid": False})
 
-@app.route('/bulk-send', methods=['POST'])
+@api.route('/bulk-send', methods=['POST'])
 def bulk_send():
     message = request.form.get("message", "")
     print(f"[BULK SEND]: {message[:100]}")
     return jsonify({"status": "sent"})
 
-@app.route('/bulk-verify', methods=['POST'])
+@api.route('/bulk-verify', methods=['POST'])
 def bulk_verify():
     numbers = request.form.get("numbers", "")
     print(f"[VERIFY]: {numbers[:100]}")

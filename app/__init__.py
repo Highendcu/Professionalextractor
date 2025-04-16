@@ -2,6 +2,8 @@ from flask import Flask
 from flask_session import Session
 from flask_socketio import SocketIO
 from app.extensions import db
+from .routes.api import api
+app.register_blueprint(api)
 
 socketio = SocketIO(cors_allowed_origins="*")
 
