@@ -15,8 +15,8 @@ def create_app():
 
     # ⬇️ Move imports AFTER app is created
     from .routes.main import bp as main
-    from .routes.admin import admin
-    from .routes.api import api
+    from .routes.admin import bp as admin
+    from .routes.api import bp as api
 
     # ⬇️ Register blueprints with app
     app.register_blueprint(main)
