@@ -2,9 +2,9 @@ from flask import Blueprint, render_template, session
 import json
 import os
 
-bp = Blueprint('main', __name__)
+main = Blueprint('main', __name__)
 
-@bp.route('/')
+@main.route('/')
 def index():
     country_states = {}
     countries = []
