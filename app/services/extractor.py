@@ -96,6 +96,7 @@ def start_extraction(urls, keywords, platforms, country, state):
 
     thread = threading.Thread(target=process)
     thread.start()
+	print(f"🟢 Starting extraction on platforms: {platforms}")
 
 def stop_extraction():
     global EXTRACTION_ACTIVE
