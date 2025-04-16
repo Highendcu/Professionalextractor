@@ -1,21 +1,29 @@
-### app/services/validator.py
+import json
+import os
 from datetime import datetime
-from app.models.user import load_users
+
+USERS_FILE = os.path.join("app", "data", "users.json")
 
 def validate_credentials(username, password):
-    users = load_users()
+    if not os.path.exists(USERS_FILE):
+        return False, "User database not found"
+
+    try:
+        with open(USERS_FILE, "r") as f:
+            users = json.load(f)
+    except json.JSONDecodeError:
+        return False, "Invalid user data"
+
     for user in users:
-        if user["username"] == username and user["password"] == password:
+        if user.get("username") == username and user.get("password") == password:
             expiry = user.get("expiry")
-            if not expiry or datetime.fromisoformat(expiry) > datetime.utcnow():
-                return True, "Valid license"
-            else:
-                return False, "License expired"
-    return False, "Invalid credentials"
-
-
-def is_license_expired(user):
-    expiry = user.get("expiry")
-    if not expiry:
-        return False
-    return datetime.fromisoformat(expiry) < datetime.utcnow()
+            if expiry:
+                try:
+                    expiry_date = datetime.fromisoformat(expiry)
+                    if expiry_date < datetime.utcnow():
+                        return False, "License expired"
+                except Exception:
+                    return False, "Invalid expiry format"
+            return True, "Valid credentials"
+    
+    return False, "Invalid username or password"
