@@ -71,6 +71,11 @@ def start_extraction(urls, keywords, platforms, country, state):
                             },
                             broadcast=True
                         )
+                        socketio.emit(
+                            "extraction_update",
+                            { "data": results },
+                            broadcast=True
+                        )
                     else:
                         print("[WARN] SocketIO not initialized.")
                 except Exception as e:

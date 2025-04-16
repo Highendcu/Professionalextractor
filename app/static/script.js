@@ -164,3 +164,21 @@ document.querySelector(".success-btn[onclick*='exportData']").addEventListener("
   URL.revokeObjectURL(url);
   showStatus("💾 Data exported!", "success");
 });
+
+// === Real-time Data Row Updates ===
+socket.on("extraction_update", (data) => {
+  const container = document.getElementById("phone-preview");
+
+  data.data.forEach(entry => {
+    const row = document.createElement("tr");
+    row.classList.add("data-entry");
+
+    row.innerHTML = `
+      <td>${entry.number || ""}</td>
+      <td>${entry.name || ""}</td>
+      <td>${entry.address || ""}</td>
+    `;
+
+    container.appendChild(row);
+  });
+});
