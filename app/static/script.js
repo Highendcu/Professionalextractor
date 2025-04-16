@@ -10,13 +10,11 @@ function toggleTheme() {
 
 document.addEventListener("DOMContentLoaded", () => {
   const savedTheme = localStorage.getItem("theme");
+  const themeToggle = document.getElementById("theme-toggle");
   if (savedTheme === "light") {
     document.body.classList.add("light-mode");
-    const themeToggle = document.getElementById("theme-toggle");
     if (themeToggle) themeToggle.innerText = "🌙 Dark Mode";
   }
-
-  const themeToggle = document.getElementById("theme-toggle");
   if (themeToggle) themeToggle.addEventListener("click", toggleTheme);
 });
 
@@ -27,12 +25,16 @@ function showStatus(message, type = "info") {
   box.innerText = message;
   box.className = "status-box " + type;
   box.style.display = "block";
-  setTimeout(() => { box.style.display = "none"; }, 4000);
+  setTimeout(() => {
+    box.style.display = "none";
+  }, 4000);
 }
 
 // === Print Functionality ===
 function printExtractedData() {
-  const printContent = document.getElementById("phone-preview").parentElement.innerHTML;
+  const preview = document.getElementById("phone-preview");
+  if (!preview) return;
+  const printContent = preview.parentElement.innerHTML;
   const printWindow = window.open("", "_blank");
   printWindow.document.write(`
     <html><head><title>Print Extracted Data</title>
@@ -47,14 +49,21 @@ function printExtractedData() {
 
 // === Modal Controls ===
 function openModal(id) {
-  document.getElementById(id).classList.add("active");
-  document.getElementById("modal-overlay").classList.add("active");
+  const modal = document.getElementById(id);
+  if (modal) modal.classList.add("active");
+  const overlay = document.getElementById("modal-overlay");
+  if (overlay) overlay.classList.add("active");
 }
 
 function closeModals() {
   document.querySelectorAll(".modal").forEach(modal => modal.classList.remove("active"));
-  document.getElementById("modal-overlay").classList.remove("active");
+  const overlay = document.getElementById("modal-overlay");
+  if (overlay) overlay.classList.remove("active");
 }
+
+document.querySelectorAll(".close-btn, #modal-overlay").forEach(el => {
+  el.addEventListener("click", closeModals);
+});
 
 function generateLicense(userId) {
   fetch("/generate-license", {
@@ -62,19 +71,15 @@ function generateLicense(userId) {
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({ user_id: userId }),
   })
-  .then(res => res.json())
-  .then(data => {
-    if (data.license_key) {
-      alert("License Key: " + data.license_key);
-    } else {
-      alert("Error generating license.");
-    }
-  });
+    .then(res => res.json())
+    .then(data => {
+      if (data.license_key) {
+        alert("License Key: " + data.license_key);
+      } else {
+        alert("Error generating license.");
+      }
+    });
 }
-
-document.querySelectorAll(".close-btn, #modal-overlay").forEach(el => {
-  el.addEventListener("click", closeModals);
-});
 
 // === Extraction Logic ===
 let extractionInterval;
@@ -82,12 +87,10 @@ let extractionInterval;
 document.getElementById("start-btn").addEventListener("click", () => {
   const urls = document.getElementById("urls").value.trim();
   const checkedPlatforms = document.querySelectorAll('input[name="platforms[]"]:checked');
-
   if (!urls || checkedPlatforms.length === 0) {
     alert("Please enter URLs and select at least one platform.");
     return;
   }
-
   openModal("login-modal");
 });
 
@@ -103,11 +106,8 @@ document.getElementById("login-form").addEventListener("submit", function (e) {
       $('#loading-indicator').show();
 
       $.post('/extract', $('#phone-extractor-form').serialize(), function () {
-        // Uncomment if fallback polling is needed:
-        // extractionInterval = setInterval(updateResults, 5000);
         showStatus("✅ Extraction started!", "success");
       });
-
     } else {
       $('#license-warning').show();
       $('#error-message').show();
@@ -127,31 +127,34 @@ socket.on("extraction_update", data => {
   const container = document.getElementById("phone-preview");
   if (!container || !data.data) return;
 
+  if (container.querySelector(".placeholder-msg")) {
+    container.innerHTML = ""; // Clear placeholder
+  }
+
   data.data.forEach(entry => {
     const row = document.createElement("tr");
     row.classList.add("data-entry");
-
     row.innerHTML = `
       <td>${entry.number || ""}</td>
       <td>${entry.name || ""}</td>
       <td>${entry.address || ""}</td>
     `;
-
     container.appendChild(row);
   });
 });
 
-// === Optional: Polling fallback ===
+// === Polling Fallback (optional) ===
 function updateResults() {
   $.get("/view-extraction", function (data) {
     const container = document.getElementById("phone-preview");
+    if (!container) return;
     container.innerHTML = "";
     data.numbers.forEach(entry => {
       container.innerHTML += `
         <tr class="data-entry">
-          <td> ${entry.number}</td>
-          <td> ${entry.name}</td>
-          <td> ${entry.address}</td>
+          <td>${entry.number}</td>
+          <td>${entry.name}</td>
+          <td>${entry.address}</td>
         </tr>
       `;
     });

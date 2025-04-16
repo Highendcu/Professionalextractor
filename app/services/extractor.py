@@ -13,10 +13,12 @@ from app.services.scraper.angi import scrape_angi
 from app.services.scraper.houzz import scrape_houzz
 from app.services.scraper.thumbtack import scrape_thumbtack
 
+# Shared state
 EXTRACTION_DATA = []
 EXTRACTION_ACTIVE = False
 DATA_LOCK = threading.Lock()
 
+# Map of platform to scraper function
 SCRAPER_MAP = {
     "yellowpages": scrape_yellowpages,
     "whitepages": scrape_whitepages,
@@ -30,20 +32,22 @@ SCRAPER_MAP = {
     "thumbtack": scrape_thumbtack
 }
 
-socketio = None  # Placeholder for socketio instance
+socketio = None  # Placeholder
 
 def set_socketio(sio):
     global socketio
     socketio = sio
+    print("[DEBUG] SocketIO instance has been set.")
 
 def start_extraction(urls, keywords, platforms, country, state):
     global EXTRACTION_ACTIVE
     EXTRACTION_ACTIVE = True
+    print("[DEBUG] Starting extraction thread...")
 
     with DATA_LOCK:
         EXTRACTION_DATA.clear()
 
-    # Normalize inputs
+    # Normalize input
     if isinstance(urls, str):
         urls = [u.strip() for u in urls.split(",") if u.strip()]
     if isinstance(keywords, str):
@@ -52,35 +56,43 @@ def start_extraction(urls, keywords, platforms, country, state):
     def process():
         global EXTRACTION_ACTIVE
         total_count = 0
+        print("[DEBUG] Extracting for platforms:", platforms)
+
         for platform in platforms:
             if not EXTRACTION_ACTIVE:
                 break
+
             scraper = SCRAPER_MAP.get(platform)
             if scraper:
                 try:
+                    print(f"[DEBUG] Scraping platform: {platform}...")
                     results = scraper(urls, keywords, country, state)
+                    print(f"[DEBUG] Results from {platform}: {len(results)}")
+
                     with DATA_LOCK:
                         EXTRACTION_DATA.extend(results)
                         total_count += len(results)
+
+                    # Emit via socket
                     if socketio:
-                        socketio.emit(
-                            "update",
-                            {
-                                "new_count": len(results),
-                                "total_count": total_count
-                            },
-                            broadcast=True
-                        )
-                        socketio.emit(
-                            "extraction_update",
-                            { "data": results },
-                            broadcast=True
-                        )
+                        socketio.emit("update", {
+                            "new_count": len(results),
+                            "total_count": total_count
+                        }, broadcast=True)
+
+                        socketio.emit("extraction_update", {
+                            "data": results
+                        }, broadcast=True)
+
+                        print("[DEBUG] Emitted update to client via SocketIO.")
                     else:
-                        print("[WARN] SocketIO not initialized.")
+                        print("[WARN] SocketIO is not initialized.")
+
                 except Exception as e:
                     print(f"[ERROR] Scraper failed for {platform}: {e}")
+
         EXTRACTION_ACTIVE = False
+        print("[DEBUG] Extraction process completed.")
 
     thread = threading.Thread(target=process)
     thread.start()
@@ -88,6 +100,7 @@ def start_extraction(urls, keywords, platforms, country, state):
 def stop_extraction():
     global EXTRACTION_ACTIVE
     EXTRACTION_ACTIVE = False
+    print("[DEBUG] Extraction has been stopped.")
 
 def get_extracted_data():
     with DATA_LOCK:

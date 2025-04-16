@@ -62,6 +62,7 @@
           {% endfor %}
         </select>
       </div>
+
       <div class="form-section">
         <label for="state">Select State:</label>
         <select id="state" name="state">
@@ -98,6 +99,7 @@
       </div>
     </section>
 
+    <!-- Overlay and Modals -->
     <div id="modal-overlay" class="modal-overlay"></div>
 
     <!-- Settings Modal -->
@@ -120,46 +122,38 @@
         </form>
       </div>
     </div>
-	<!-- Bulk Sender Modal -->
+
+    <!-- Bulk Sender Modal -->
     <div id="sender-modal" class="modal">
       <div class="modal-content">
         <span class="close-btn">&times;</span>
         <h3>📤 Bulk Sender</h3>
         <form id="bulk-send-form">
-            <label for="message-content">Message to Send:</label>
-            <textarea id="message-content" rows="6" placeholder="Write your bulk message here..." required></textarea>
-            <div class="modal-actions">
-                <button type="submit" class="btn primary-btn">Send to 50,000</button>
-                <button type="button" class="btn cancel-btn" onclick="closeModals()">Cancel</button>
-              </div>
-            </form>
+          <label for="message-content">Message to Send:</label>
+          <textarea id="message-content" rows="6" placeholder="Write your bulk message here..." required></textarea>
+          <div class="modal-actions">
+            <button type="submit" class="btn primary-btn">Send to 50,000</button>
+            <button type="button" class="btn cancel-btn" onclick="closeModals()">Cancel</button>
           </div>
-        </div>
+        </form>
+      </div>
+    </div>
 
-     <!-- Bulk Verifier Modal -->
-        <div id="verifier-modal" class="modal">
-          <div class="modal-content">
-            <span class="close-btn">&times;</span>
-            <h3>🔢 Bulk Verify</h3>
-            <form id="bulk-verify-form">
-              <label for="verify-numbers">Paste Numbers to Verify (up to 25,000):</label>
-              <textarea id="verify-numbers" rows="6" placeholder="Enter phone numbers separated by commas" required></textarea>
-              <div class="modal-actions">
-                <button type="submit" class="btn primary-btn">Verify</button>
-                <button type="button" class="btn cancel-btn" onclick="closeModals()">Cancel</button>
-              </div>
-            </form>
+    <!-- Bulk Verifier Modal -->
+    <div id="verifier-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-btn">&times;</span>
+        <h3>🔢 Bulk Verify</h3>
+        <form id="bulk-verify-form">
+          <label for="verify-numbers">Paste Numbers to Verify (up to 25,000):</label>
+          <textarea id="verify-numbers" rows="6" placeholder="Enter phone numbers separated by commas" required></textarea>
+          <div class="modal-actions">
+            <button type="submit" class="btn primary-btn">Verify</button>
+            <button type="button" class="btn cancel-btn" onclick="closeModals()">Cancel</button>
           </div>
-        </div>
-
-    <!-- Start Extraction Button -->
-        <div id="start-wrapper" style="display: flex; align-items: center; gap: 10px;">
-            <button id="start-btn" class="btn primary-btn">Start Extraction</button>
-            <div id="loading-indicator" style="display: none; align-items: center; gap: 5px;">
-                <div class="spinner"></div>
-                <span id="loading-icon" style="display:none">⏳ Extracting...</span>
-              </div>
-            </div>
+        </form>
+      </div>
+    </div>
 
     <!-- Login Modal -->
     <div id="login-modal" class="modal">
@@ -176,9 +170,20 @@
         <p id="error-message" class="form-error" style="display: none;">Invalid username or password</p>
       </div>
     </div>
+
+    <!-- Start Button -->
+    <div id="start-wrapper" style="display: flex; align-items: center; gap: 10px;">
+      <button id="start-btn" class="btn primary-btn">Start Extraction</button>
+      <div id="loading-indicator" style="display: none; align-items: center; gap: 5px;">
+        <div class="spinner"></div>
+        <span id="loading-icon" style="display:none">⏳ Extracting...</span>
+      </div>
+    </div>
   </div>
 
 <script> 
+  const socket = io();
+  
   let extractionInterval;
 
   function openModal(modalId) {
@@ -325,6 +330,6 @@ document.getElementById("bulk-verify-form").addEventListener("submit", function 
   });
 });
 </script>
-<script src="{{ url_for('static', filename='script.js') }}"></script>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
