@@ -14,8 +14,8 @@ def create_app():
     from app.routes.api import bp as api
 
     app.register_blueprint(main)
-    app.register_blueprint(admin)
-    app.register_blueprint(api)
+    app.register_blueprint(admin, url_prefix="/admin")
+    app.register_blueprint(api, url_prefix="/api")
 
     from app.services.extractor import set_socketio
     set_socketio(socketio)
