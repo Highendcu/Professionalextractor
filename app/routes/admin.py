@@ -9,7 +9,7 @@ import random
 import string
 from app.services.validator import validate_credentials
 
-bp = Blueprint("admin", __name__, template_folder="../templates")
+admin = Blueprint("admin", __name__, template_folder="../templates")
 
 USER_DB_PATH = os.path.join("app", "data", "users.json")
 DEFAULT_ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
@@ -33,7 +33,7 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated
 
-@bp.route("/admin-login", methods=["GET", "POST"])
+@admin.route("/admin-login", methods=["GET", "POST"])
 def admin_login():
     username_env = os.getenv("ADMIN_USERNAME", DEFAULT_ADMIN_USERNAME)
     password_env = os.getenv("ADMIN_PASSWORD", DEFAULT_ADMIN_PASSWORD)
@@ -47,13 +47,13 @@ def admin_login():
         return render_template("login.html", error="Invalid credentials")
     return render_template("login.html")
 
-@bp.route("/logout")
+@admin.route("/logout")
 @login_required
 def logout():
     session.pop("admin_logged_in", None)
     return redirect(url_for("main.index"))
 
-@bp.route("/admin-dashboard")
+@admin.route("/admin-dashboard")
 @login_required
 def admin_dashboard():
     users = load_users()
@@ -75,7 +75,7 @@ def admin_dashboard():
                            total_pages=total_pages,
                            now=datetime.utcnow())
 
-@bp.route("/generate-user", methods=["POST"])
+@admin.route("/generate-user", methods=["POST"])
 @login_required
 def generate_user():
     username = f"user-{uuid.uuid4().hex[:6]}"
@@ -92,7 +92,7 @@ def generate_user():
     save_users(users)
     return jsonify({"username": username, "password": password, "expiry": expiry})
 
-@bp.route("/revoke-user/<username>", methods=["POST"])
+@admin.route("/revoke-user/<username>", methods=["POST"])
 @login_required
 def revoke_user(username):
     users = load_users()
@@ -102,7 +102,7 @@ def revoke_user(username):
     save_users(users)
     return redirect(url_for("admin.admin_dashboard"))
 
-@bp.route("/edit-user/<username>")
+@admin.route("/edit-user/<username>")
 @login_required
 def edit_user_form(username):
     users = load_users()
@@ -111,7 +111,7 @@ def edit_user_form(username):
             return render_template("edit_user.html", user=user)
     return redirect(url_for("admin.admin_dashboard"))
 
-@bp.route("/edit-user/<username>", methods=["POST"])
+@admin.route("/edit-user/<username>", methods=["POST"])
 @login_required
 def update_user(username):
     users = load_users()
@@ -122,7 +122,7 @@ def update_user(username):
     save_users(users)
     return redirect(url_for("admin.admin_dashboard"))
 
-@bp.route("/export-csv")
+@admin.route("/export-csv")
 @login_required
 def export_csv():
     import csv
@@ -141,7 +141,7 @@ def export_csv():
         download_name="users.csv"
     )
 
-@bp.route('/verify-credentials', methods=['POST'])
+@admin.route('/verify-credentials', methods=['POST'])
 def verify_credentials():
     data = request.form or request.get_json()
     username = data.get('username', '').strip()

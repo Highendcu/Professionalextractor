@@ -17,10 +17,7 @@ def create_app():
     from app.routes.admin import admin as admin_blueprint
 
     app.register_blueprint(main_blueprint)
-    app.register_blueprint(api_blueprint)
-    app.register_blueprint(admin_blueprint)
-
-    socketio.init_app(app)
-    set_socketio(socketio)
-
+    app.register_blueprint(api_blueprint, url_prefix='/api')
+    app.register_blueprint(admin_blueprint, url_prefix='/admin')
+    
     return app, socketio
