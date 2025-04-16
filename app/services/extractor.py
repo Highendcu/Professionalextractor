@@ -22,7 +22,18 @@ ACTIVITY_LOCK = threading.Lock()
 def test_scraper(urls, keywords, country, state):
     return [{"number": "555-1234", "name": "Test", "address": "Test Address"}]
 # Map of platform to scraper function
-SCRAPER_MAP = {"yellowpages": scrape_yellowpages}
+SCRAPER_MAP = {
+    "yellowpages": scrape_yellowpages,
+    "whitepages": scrape_whitepages,
+    "manta": scrape_manta,
+    "yelp": scrape_yelp,
+    "bbb": scrape_bbb,
+    "hotfrog": scrape_hotfrog,
+    "cylex": scrape_cylex,
+    "angi": scrape_angi,
+    "houzz": scrape_houzz,
+    "thumbtack": scrape_thumbtack
+}
 
 socketio = None  # Placeholder
 
@@ -59,8 +70,7 @@ def start_extraction(urls, keywords, platforms, country, state):
                 try:
                     print(f"[DEBUG] Scraping platform: {platform}...")
                     results = scraper(urls, keywords, country, state)
-                    print(f"[DEBUG] results = scraper(keywords, f"{country} {state}")  # Pass keywords + location
-
+					print(f"[DEBUG] results = scraper(keywords, '{country} {state}')")
                     with DATA_LOCK:
                         EXTRACTION_DATA.extend(results)
                         total_count += len(results)
