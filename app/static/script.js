@@ -72,7 +72,6 @@ function generateLicense(userId) {
   });
 }
 
-
 document.querySelectorAll(".close-btn, #modal-overlay").forEach(el => {
   el.addEventListener("click", closeModals);
 });
@@ -101,11 +100,14 @@ document.getElementById("login-form").addEventListener("submit", function (e) {
     if (data.valid) {
       $('#login-modal').hide();
       $('#license-warning').hide();
-      $('#loading-indicator').show(); // 👈 show loader + text
+      $('#loading-indicator').show();
+
       $.post('/extract', $('#phone-extractor-form').serialize(), function () {
-        extractionInterval = setInterval(updateResults, 5000);
+        // Uncomment if fallback polling is needed:
+        // extractionInterval = setInterval(updateResults, 5000);
         showStatus("✅ Extraction started!", "success");
       });
+
     } else {
       $('#license-warning').show();
       $('#error-message').show();
@@ -113,7 +115,33 @@ document.getElementById("login-form").addEventListener("submit", function (e) {
   });
 });
 
-// === Live Updates ===
+// === WebSocket Real-Time Updates ===
+const socket = io();
+
+socket.on("update", data => {
+  document.getElementById("new-count").innerText = data.new_count;
+  document.getElementById("total-count").innerText = data.total_count;
+});
+
+socket.on("extraction_update", data => {
+  const container = document.getElementById("phone-preview");
+  if (!container || !data.data) return;
+
+  data.data.forEach(entry => {
+    const row = document.createElement("tr");
+    row.classList.add("data-entry");
+
+    row.innerHTML = `
+      <td>${entry.number || ""}</td>
+      <td>${entry.name || ""}</td>
+      <td>${entry.address || ""}</td>
+    `;
+
+    container.appendChild(row);
+  });
+});
+
+// === Optional: Polling fallback ===
 function updateResults() {
   $.get("/view-extraction", function (data) {
     const container = document.getElementById("phone-preview");
@@ -130,18 +158,11 @@ function updateResults() {
   });
 }
 
-const socket = io();
-socket.on("update", data => {
-  document.getElementById("new-count").innerText = data.new_count;
-  document.getElementById("total-count").innerText = data.total_count;
-  updateResults();
-});
-
 // === Stop Extraction ===
 document.getElementById("stop-btn").addEventListener("click", () => {
   $.post("/stop-extraction", function () {
     clearInterval(extractionInterval);
-    $('#loading-indicator').hide(); // 👈 hide loader
+    $('#loading-indicator').hide();
     showStatus("🛑 Extraction stopped", "warning");
   });
 });
@@ -163,22 +184,4 @@ document.querySelector(".success-btn[onclick*='exportData']").addEventListener("
   a.click();
   URL.revokeObjectURL(url);
   showStatus("💾 Data exported!", "success");
-});
-
-// === Real-time Data Row Updates ===
-socket.on("extraction_update", (data) => {
-  const container = document.getElementById("phone-preview");
-
-  data.data.forEach(entry => {
-    const row = document.createElement("tr");
-    row.classList.add("data-entry");
-
-    row.innerHTML = `
-      <td>${entry.number || ""}</td>
-      <td>${entry.name || ""}</td>
-      <td>${entry.address || ""}</td>
-    `;
-
-    container.appendChild(row);
-  });
 });
