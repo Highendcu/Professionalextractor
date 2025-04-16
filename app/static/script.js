@@ -16,6 +16,59 @@ document.addEventListener("DOMContentLoaded", () => {
     if (themeToggle) themeToggle.innerText = "🌙 Dark Mode";
   }
   if (themeToggle) themeToggle.addEventListener("click", toggleTheme);
+
+  // Modal Event Listener Bind
+  document.querySelectorAll(".close-btn, #modal-overlay").forEach(el => {
+    el.addEventListener("click", closeModals);
+  });
+
+  // Extraction Button
+  const startBtn = document.getElementById("start-btn");
+  if (startBtn) {
+    startBtn.addEventListener("click", () => {
+      const urls = document.getElementById("urls").value.trim();
+      const checkedPlatforms = document.querySelectorAll('input[name="platforms[]"]:checked');
+      if (!urls || checkedPlatforms.length === 0) {
+        alert("Please enter URLs and select at least one platform.");
+        return;
+      }
+      openModal("login-modal");
+    });
+  }
+
+  // Stop Extraction Button
+  const stopBtn = document.getElementById("stop-btn");
+  if (stopBtn) {
+    stopBtn.addEventListener("click", () => {
+      $.post("/stop-extraction", function () {
+        clearInterval(extractionInterval);
+        $('#loading-indicator').hide();
+        showStatus("🛑 Extraction stopped", "warning");
+      });
+    });
+  }
+
+  // Export Button
+  const exportBtn = document.querySelector(".success-btn[onclick*='exportData']");
+  if (exportBtn) {
+    exportBtn.addEventListener("click", () => {
+      const entries = document.querySelectorAll(".data-entry td:first-child");
+      const numbers = Array.from(entries).map(e => e.textContent.trim());
+      if (numbers.length === 0) {
+        alert("No numbers to export!");
+        return;
+      }
+      const content = numbers.join("\n");
+      const blob = new Blob([content], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "extracted_numbers.txt";
+      a.click();
+      URL.revokeObjectURL(url);
+      showStatus("💾 Data exported!", "success");
+    });
+  }
 });
 
 // === Status Message Flash ===
@@ -30,7 +83,7 @@ function showStatus(message, type = "info") {
   }, 4000);
 }
 
-// === Print Functionality ===
+// === Print Extracted Data ===
 function printExtractedData() {
   const preview = document.getElementById("phone-preview");
   if (!preview) return;
@@ -61,10 +114,7 @@ function closeModals() {
   if (overlay) overlay.classList.remove("active");
 }
 
-document.querySelectorAll(".close-btn, #modal-overlay").forEach(el => {
-  el.addEventListener("click", closeModals);
-});
-
+// === License Generator ===
 function generateLicense(userId) {
   fetch("/generate-license", {
     method: "POST",
@@ -83,16 +133,6 @@ function generateLicense(userId) {
 
 // === Extraction Logic ===
 let extractionInterval;
-
-document.getElementById("start-btn").addEventListener("click", () => {
-  const urls = document.getElementById("urls").value.trim();
-  const checkedPlatforms = document.querySelectorAll('input[name="platforms[]"]:checked');
-  if (!urls || checkedPlatforms.length === 0) {
-    alert("Please enter URLs and select at least one platform.");
-    return;
-  }
-  openModal("login-modal");
-});
 
 document.getElementById("login-form").addEventListener("submit", function (e) {
   e.preventDefault();
@@ -160,31 +200,3 @@ function updateResults() {
     });
   });
 }
-
-// === Stop Extraction ===
-document.getElementById("stop-btn").addEventListener("click", () => {
-  $.post("/stop-extraction", function () {
-    clearInterval(extractionInterval);
-    $('#loading-indicator').hide();
-    showStatus("🛑 Extraction stopped", "warning");
-  });
-});
-
-// === Export Button ===
-document.querySelector(".success-btn[onclick*='exportData']").addEventListener("click", () => {
-  const entries = document.querySelectorAll(".data-entry td:first-child");
-  const numbers = Array.from(entries).map(e => e.textContent.trim());
-  if (numbers.length === 0) {
-    alert("No numbers to export!");
-    return;
-  }
-  const content = numbers.join("\n");
-  const blob = new Blob([content], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "extracted_numbers.txt";
-  a.click();
-  URL.revokeObjectURL(url);
-  showStatus("💾 Data exported!", "success");
-});
