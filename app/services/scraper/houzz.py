@@ -1,46 +1,38 @@
-# app/services/scraper/houzz.py
 import requests
 from bs4 import BeautifulSoup
 import time
 import random
-import requests_cache
-
-requests_cache.install_cache("scraper_cache", expire_after=7200)
 
 def scrape_houzz(keywords, location=""):
     results = []
 
+    headers = {"User-Agent": "Mozilla/5.0"}
     if isinstance(keywords, str):
         keywords = [k.strip() for k in keywords.split(",") if k.strip()]
-    if isinstance(location, list):
-        location = " ".join(location)
-    if not location:
-        location = "usa"
-
-    headers = {"User-Agent": "Mozilla/5.0"}
+    loc = location.strip().replace(" ", "-").lower() or "united-states"
 
     for keyword in keywords:
         try:
-            search = keyword.replace(" ", "-").lower()
-            url = f"https://www.houzz.com/professionals/{search}"
+            kw = keyword.replace(" ", "-").lower()
+            url = f"https://www.houzz.com/professionals/{kw}/service--{loc}"
 
             response = requests.get(url, headers=headers, timeout=10)
             soup = BeautifulSoup(response.text, "html.parser")
+            listings = soup.select("div.hz-pro-search-results__listing")
 
-            listings = soup.select(".hz-pro-search-result")
-
-            for listing in listings:
-                name = listing.select_one("a.hz-pro-name")
-                phone = "N/A"
-                address = listing.select_one(".hz-pro-location")
+            for listing in listings[:15]:
+                name = listing.select_one(".hz-pro-search-results__name")
+                phone = listing.select_one(".hz-pro-search-results__phone-number")
+                address = listing.select_one(".hz-pro-search-results__location")
 
                 results.append({
                     "name": name.text.strip() if name else "N/A",
-                    "phone": phone,
+                    "phone": phone.text.strip() if phone else "N/A",
                     "address": address.text.strip() if address else "N/A"
                 })
 
-            time.sleep(random.uniform(1, 2.5))
+            time.sleep(random.uniform(1.5, 2.5))
+
         except Exception as e:
             print(f"[HOUZZ ERROR] {e}")
 

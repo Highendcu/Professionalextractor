@@ -21,18 +21,17 @@ def scrape_manta(keywords, location=""):
 
     for keyword in keywords:
         try:
-            search = keyword.replace(" ", "+")
-            url = f"https://www.manta.com/search?search_source=nav&search={search}"
+            query = keyword.replace(" ", "-")
+            url = f"https://www.manta.com/search?search_source=nav&pt=business&search={query}"
 
             response = requests.get(url, headers=headers, timeout=10)
             soup = BeautifulSoup(response.text, "html.parser")
+            listings = soup.select(".search-listing")
 
-            listings = soup.select("div.card")
-
-            for entry in listings:
-                name = entry.select_one("a.business-name")
-                phone = entry.select_one("span.card-phone")
-                address = entry.select_one("div.card-location")
+            for listing in listings:
+                name = listing.select_one(".business-name a")
+                phone = listing.select_one(".phone")
+                address = listing.select_one(".address")
 
                 results.append({
                     "name": name.text.strip() if name else "N/A",
@@ -40,9 +39,8 @@ def scrape_manta(keywords, location=""):
                     "address": address.text.strip() if address else "N/A"
                 })
 
-            time.sleep(random.uniform(1, 2.5))
-
+                time.sleep(random.uniform(1.5, 2.5))
         except Exception as e:
-            print(f"[MANTA ERROR] {e}")
+            print("[MANTA ERROR]", e)
 
     return results

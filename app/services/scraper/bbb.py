@@ -1,15 +1,12 @@
-# app/services/scraper/bbb.py
 import requests
 from bs4 import BeautifulSoup
 import time
 import random
-import requests_cache
-
-requests_cache.install_cache("scraper_cache", expire_after=7200)
 
 def scrape_bbb(keywords, location=""):
     results = []
 
+    headers = {"User-Agent": "Mozilla/5.0"}
     if isinstance(keywords, str):
         keywords = [k.strip() for k in keywords.split(",") if k.strip()]
     if isinstance(location, list):
@@ -17,23 +14,20 @@ def scrape_bbb(keywords, location=""):
     if not location:
         location = "usa"
 
-    headers = {"User-Agent": "Mozilla/5.0"}
-
     for keyword in keywords:
         try:
-            search = keyword.replace(" ", "+")
+            kw = keyword.replace(" ", "+")
             loc = location.replace(" ", "+")
-            url = f"https://www.bbb.org/search?find_country=USA&find_text={search}&find_loc={loc}"
+            url = f"https://www.bbb.org/search?find_country=USA&find_text={kw}&find_loc={loc}"
 
             response = requests.get(url, headers=headers, timeout=10)
             soup = BeautifulSoup(response.text, "html.parser")
+            listings = soup.select("div.SearchResults__sc-j6tvzb-0")
 
-            cards = soup.select(".SearchResults__resultItem")
-
-            for card in cards:
-                name = card.select_one(".ResultItem__BusinessTitle")
-                phone = card.select_one(".Phone__PhoneNumber")
-                address = card.select_one(".ResultItem__BusinessAddress")
+            for listing in listings[:15]:
+                name = listing.select_one("a[data-testid='business-title-link']")
+                phone = listing.select_one("p[data-testid='business-phone']")
+                address = listing.select_one("p[data-testid='business-address']")
 
                 results.append({
                     "name": name.text.strip() if name else "N/A",
@@ -41,7 +35,8 @@ def scrape_bbb(keywords, location=""):
                     "address": address.text.strip() if address else "N/A"
                 })
 
-            time.sleep(random.uniform(1, 2.5))
+            time.sleep(random.uniform(1.2, 2.0))
+
         except Exception as e:
             print(f"[BBB ERROR] {e}")
 

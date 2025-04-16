@@ -10,7 +10,6 @@ requests_cache.install_cache("scraper_cache", expire_after=7200)
 def scrape_whitepages(keywords, location=""):
     results = []
 
-    # Normalize inputs
     if isinstance(keywords, str):
         keywords = [k.strip() for k in keywords.split(",") if k.strip()]
     if isinstance(location, list):
@@ -21,28 +20,28 @@ def scrape_whitepages(keywords, location=""):
     headers = {"User-Agent": "Mozilla/5.0"}
 
     for keyword in keywords:
-        search_term = keyword.replace(" ", "-").lower()
-        loc_term = location.replace(" ", "-").lower()
-        url = f"https://www.whitepages.com/business/{search_term}/{loc_term}"
-
         try:
+            query = keyword.replace(" ", "+")
+            loc = location.replace(" ", "+")
+            url = f"https://www.whitepages.com/business/search?utf8=✓&what={query}&where={loc}"
+
             response = requests.get(url, headers=headers, timeout=10)
             soup = BeautifulSoup(response.text, "html.parser")
-            cards = soup.select(".business-card")
-            
-            for card in cards:
-                name_tag = card.select_one(".business-name")
-                phone_tag = card.select_one(".phone-number")
-                address_tag = card.select_one(".address")
-                
+            listings = soup.select("div.ListingCard")
+
+            for listing in listings:
+                name = listing.select_one("a.listing-name")
+                phone = listing.select_one("span.PhoneNumber")
+                address = listing.select_one("div.Address")
+
                 results.append({
-                    "name": name_tag.text.strip() if name_tag else "N/A",
-                    "phone": phone_tag.text.strip() if phone_tag else "N/A",
-                    "address": address_tag.text.strip() if address_tag else "N/A"
+                    "name": name.text.strip() if name else "N/A",
+                    "phone": phone.text.strip() if phone else "N/A",
+                    "address": address.text.strip() if address else "N/A"
                 })
-            
-            time.sleep(random.uniform(1, 2.5))
+
+                time.sleep(random.uniform(1.2, 2.0))
         except Exception as e:
-            print(f"[WHITEPAGES ERROR] {e}")
+            print("[WHITEPAGES ERROR]", e)
 
     return results
