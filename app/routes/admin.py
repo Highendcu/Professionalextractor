@@ -151,3 +151,5 @@ def verify_credentials():
         session['license_valid'] = True
         return jsonify({"valid": True})
     return jsonify({"valid": False, "message": message})
+
+__all__ = ["admin"]

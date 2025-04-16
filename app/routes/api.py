@@ -1,8 +1,10 @@
 from flask import Blueprint, request, jsonify, Response, session
 from app.services.extractor import start_extraction, EXTRACTION_DATA, EXTRACTION_ACTIVE, DATA_LOCK, stop_extraction
-from datetime import datetime
-import threading
 from app.services.validator import validate_credentials
+from app.models.user import load_users, save_users
+import uuid
+import threading
+from datetime import datetime
 
 bp = Blueprint('api', __name__)
 
