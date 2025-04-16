@@ -1,26 +1,26 @@
 from flask import Flask
-from flask_socketio import SocketIO
 from flask_cors import CORS
+from flask_socketio import SocketIO
+from .services.extractor import set_socketio
 
-socketio = None  # Placeholder
+socketio = SocketIO(cors_allowed_origins="*")
 
 def create_app():
-    global socketio  # Let us modify the global socketio object
     app = Flask(__name__)
-    app.secret_key = 'your-secret-key'
     CORS(app)
 
-    from app.routes.main import bp as main
-    from app.routes.admin import admin
-    from app.routes.api import bp as api
+    app.config['SECRET_KEY'] = 'your-secret-key'
 
-    app.register_blueprint(main)
-    app.register_blueprint(admin, url_prefix="/admin")
-    app.register_blueprint(api, url_prefix="/api")
+    # Register your routes
+    from app.routes.main import main as main_blueprint
+    from app.routes.api import api as api_blueprint
+    from app.routes.admin import admin as admin_blueprint
 
-    socketio = SocketIO(app, cors_allowed_origins="*")  # Initialize with app
+    app.register_blueprint(main_blueprint)
+    app.register_blueprint(api_blueprint)
+    app.register_blueprint(admin_blueprint)
 
-    from app.services.extractor import set_socketio
+    socketio.init_app(app)
     set_socketio(socketio)
 
-    return app
+    return app, socketio
