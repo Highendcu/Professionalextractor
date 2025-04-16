@@ -25,21 +25,26 @@ def scrape_yellowpages(urls, keywords, country="us", state=""):
         try:
             response = requests.get(search_url, headers=headers, timeout=10)
             soup = BeautifulSoup(response.text, "html.parser")
-            listings = soup.select("div.info")
+
+            listings = soup.select("div.result")
 
             print(f"[YELLOWPAGES] Found {len(listings)} listings")
 
             for listing in listings:
-                name = listing.select_one("a.business-name span")
-                phone = listing.select_one(".phones")
-                address = listing.select_one(".street-address")
+                info = listing.select_one("div.info")
 
-                results.append({
+                name = info.select_one("a.business-name") if info else None
+                phone = info.select_one(".phones") if info else None
+                address = info.select_one(".street-address") if info else None
+
+                extracted = {
                     "name": name.text.strip() if name else "N/A",
                     "phone": phone.text.strip() if phone else "N/A",
                     "address": address.text.strip() if address else "N/A"
-                })
+                }
 
+                print("[YELLOWPAGES EXTRACTED]", extracted)
+                results.append(extracted)
                 time.sleep(random.uniform(1.2, 1.8))
 
         except Exception as e:
